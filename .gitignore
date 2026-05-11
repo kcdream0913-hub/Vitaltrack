@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+*.pyc
+.env
+!.env.example
+
+# Node
+node_modules/
+.next/
+.turbo/
+out/
+dist/
+*.tsbuildinfo
+
+# Logs / debug
+*.log
+server*.log
+server*.err
+start_server.*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+
+# Secrets (never commit)
+*.pem
+*.key
+.env.local
+.env.*.local

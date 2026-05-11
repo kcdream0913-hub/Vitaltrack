@@ -1,0 +1,15 @@
+/* Admin Header - minimal responsive rules only */
+.admin-header {
+  z-index: 100;
+}
+
+/* Sidebar toggle hidden on desktop, shown on mobile */
+.sidebar-toggle-btn {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .sidebar-toggle-btn {
+    display: flex !important;
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "short_name": "MediKeep",
+  "name": "MediKeep",
+  "description": "Your personal health record keeper",
+  "icons": [
+    {
+      "src": "icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "categories": ["medical", "health", "productivity"],
+  "lang": "en-US",
+  "prefer_related_applications": false,
+  "screenshots": [
+    {
+      "src": "icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "MediKeep Dashboard"
+    }
+  ]
+}

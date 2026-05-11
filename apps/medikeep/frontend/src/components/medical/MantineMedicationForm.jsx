@@ -1,0 +1,470 @@
+import { useState, useEffect } from 'react';
+import {
+  Modal,
+  Tabs,
+  Box,
+  Stack,
+  Group,
+  Button,
+  Grid,
+  TextInput,
+  Textarea,
+  Select,
+  MultiSelect,
+  Text,
+  Title,
+} from '@mantine/core';
+import { DateInput } from '../adapters/DateInput';
+import {
+  IconInfoCircle,
+  IconPill,
+  IconFileText,
+  IconNotes,
+  IconStethoscope,
+} from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
+import { medicationFormFields } from '../../utils/medicalFormFields';
+import { useFormHandlers } from '../../hooks/useFormHandlers';
+import { formatDateInputChange, parseDateInput } from '../../utils/dateUtils';
+import { useDateFormat } from '../../hooks/useDateFormat';
+import FormLoadingOverlay from '../shared/FormLoadingOverlay';
+import DocumentManagerWithProgress from '../shared/DocumentManagerWithProgress';
+import { TagInput } from '../common/TagInput';
+import MedicationRelationships from './MedicationRelationships';
+import logger from '../../services/logger';
+
+const MantineMedicationForm = ({
+  isOpen,
+  onClose,
+  title,
+  formData,
+  onInputChange,
+  onSubmit,
+  practitioners = [],
+  pharmacies = [],
+  editingMedication = null,
+  isLoading = false,
+  conditions = [],
+  navigate = null,
+  children,
+  statusMessage,
+  onDocumentManagerRef,
+  onFileUploadComplete,
+  onError,
+}) => {
+  // Translation
+  const { t } = useTranslation(['medical', 'common', 'shared']);
+  const { dateInputFormat, dateParser } = useDateFormat();
+
+  // Tab state management
+  const [activeTab, setActiveTab] = useState('basic');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form handlers
+  const { handleTextInputChange } = useFormHandlers(onInputChange);
+
+  const handleDocumentManagerRef = methods => {
+    if (onDocumentManagerRef) {
+      onDocumentManagerRef(methods);
+    }
+  };
+
+  const handleDocumentError = error => {
+    logger.error('document_manager_error', {
+      message: `Document manager error in medications ${editingMedication ? 'edit' : 'create'}`,
+      medicationId: editingMedication?.id,
+      error: error,
+      component: 'MantineMedicationForm',
+    });
+
+    if (onError) {
+      onError(error);
+    }
+  };
+
+  const handleDocumentUploadComplete = (
+    success,
+    completedCount,
+    failedCount
+  ) => {
+    logger.info('medications_upload_completed', {
+      message: 'File upload completed in medications form',
+      medicationId: editingMedication?.id,
+      success,
+      completedCount,
+      failedCount,
+      component: 'MantineMedicationForm',
+    });
+
+    if (onFileUploadComplete) {
+      onFileUploadComplete(success, completedCount, failedCount);
+    }
+  };
+
+  // Reset tab when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab('basic');
+    }
+    if (!isOpen) {
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
+
+  // Convert practitioners to options
+  const practitionerOptions = practitioners.map(practitioner => ({
+    value: String(practitioner.id),
+    label: `${practitioner.name}${practitioner.specialty ? ` - ${practitioner.specialty}` : ''}`,
+  }));
+
+  // Convert pharmacies to options
+  const pharmacyOptions = pharmacies.map(pharmacy => ({
+    value: String(pharmacy.id),
+    label: pharmacy.name || pharmacy.brand || 'Pharmacy',
+  }));
+
+  const conditionOptions = conditions.map(c => ({
+    value: String(c.id),
+    label: `${c.diagnosis || `Condition #${c.id}`}${c.severity ? ` (${c.severity})` : ''}${c.status ? ` - ${c.status}` : ''}`,
+  }));
+
+  // Handle form submission
+  const handleSubmit = async e => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      await onSubmit(e);
+      setIsSubmitting(false);
+    } catch (error) {
+      logger.error('Error in medication form submission:', error);
+      setIsSubmitting(false);
+    }
+  };
+
+  // Render a single field
+  const renderField = field => {
+    if (field.type === 'divider') {
+      return null;
+    }
+
+    const commonProps = {
+      key: field.name,
+      label: field.labelKey ? t(field.labelKey) : field.label,
+      placeholder: field.placeholderKey
+        ? t(field.placeholderKey)
+        : field.placeholder,
+      required: field.required,
+      description: field.descriptionKey
+        ? t(field.descriptionKey)
+        : field.description,
+      error: null,
+    };
+
+    // Get dynamic options
+    let options = field.options;
+    if (field.dynamicOptions === 'practitioners') {
+      options = practitionerOptions;
+    } else if (field.dynamicOptions === 'pharmacies') {
+      options = pharmacyOptions;
+    } else if (field.optionsKey && field.options) {
+      // Translate options using optionsKey as base
+      options = field.options.map(opt => ({
+        value: opt.value,
+        label: opt.labelKey
+          ? t(`${field.optionsKey}.${opt.labelKey}`)
+          : opt.label,
+      }));
+    } else if (field.options && field.options.some(opt => opt.labelKey)) {
+      // Translate options with individual labelKey
+      options = field.options.map(opt => ({
+        value: opt.value,
+        label: opt.labelKey ? t(opt.labelKey) : opt.label,
+      }));
+    }
+
+    switch (field.type) {
+      case 'text':
+        return (
+          <TextInput
+            {...commonProps}
+            value={formData[field.name] || ''}
+            onChange={handleTextInputChange(field.name)}
+            maxLength={field.maxLength}
+            minLength={field.minLength}
+          />
+        );
+
+      case 'select':
+        return (
+          <Select
+            {...commonProps}
+            value={formData[field.name] || null}
+            data={options || []}
+            onChange={value => {
+              onInputChange({
+                target: { name: field.name, value: value || '' },
+              });
+            }}
+            searchable={field.searchable}
+            clearable={field.clearable}
+            comboboxProps={{ withinPortal: true, zIndex: 3000 }}
+          />
+        );
+
+      case 'date':
+        return (
+          <DateInput
+            {...commonProps}
+            placeholder={dateInputFormat}
+            value={parseDateInput(formData[field.name])}
+            onChange={date => {
+              const formattedDate = formatDateInputChange(date);
+              onInputChange({
+                target: { name: field.name, value: formattedDate },
+              });
+            }}
+            valueFormat={dateInputFormat}
+            dateParser={dateParser}
+            popoverProps={{ withinPortal: true, zIndex: 3000 }}
+          />
+        );
+
+      case 'textarea':
+        return (
+          <Textarea
+            {...commonProps}
+            value={formData[field.name] || ''}
+            onChange={handleTextInputChange(field.name)}
+            minRows={field.minRows || 3}
+            maxRows={field.maxRows || 6}
+          />
+        );
+
+      case 'custom':
+        if (field.component === 'TagInput') {
+          return (
+            <Box key={field.name}>
+              <Text size="sm" fw={500} mb="xs">
+                {field.label}
+                {field.required && <span style={{ color: 'red' }}> *</span>}
+              </Text>
+              {field.description && (
+                <Text size="xs" c="dimmed" mb="xs">
+                  {field.description}
+                </Text>
+              )}
+              <TagInput
+                value={formData[field.name] || []}
+                onChange={tags => {
+                  onInputChange({ target: { name: field.name, value: tags } });
+                }}
+                placeholder={field.placeholder}
+                maxTags={field.maxTags}
+              />
+            </Box>
+          );
+        }
+        return null;
+
+      default:
+        return null;
+    }
+  };
+
+  // Group fields by section for tabs (section is declared on each field in medication.js)
+  const basicFields = medicationFormFields.filter(f => f.section === 'basic');
+  const detailsFields = medicationFormFields.filter(
+    f => f.section === 'details'
+  );
+  const notesFields = medicationFormFields.filter(f => f.section === 'notes');
+
+  return (
+    <Modal
+      opened={isOpen}
+      onClose={onClose}
+      title={title}
+      size="xl"
+      centered
+      zIndex={2000}
+      closeOnClickOutside={!isLoading}
+      closeOnEscape={!isLoading}
+      styles={{
+        body: {
+          maxHeight: 'calc(100vh - 200px)',
+          overflowY: 'auto',
+        },
+      }}
+    >
+      <FormLoadingOverlay
+        visible={isSubmitting || isLoading}
+        message={statusMessage?.title || t('medications.form.saving')}
+        submessage={statusMessage?.message}
+        type={statusMessage?.type || 'loading'}
+      />
+
+      <form onSubmit={handleSubmit}>
+        <Stack gap="lg">
+          {/* Tabbed Content */}
+          <Tabs value={activeTab} onChange={setActiveTab}>
+            <Tabs.List>
+              <Tabs.Tab
+                value="basic"
+                leftSection={<IconInfoCircle size={16} />}
+              >
+                {t('shared:tabs.basicInfo')}
+              </Tabs.Tab>
+              <Tabs.Tab value="details" leftSection={<IconPill size={16} />}>
+                {t('shared:tabs.details')}
+              </Tabs.Tab>
+              <Tabs.Tab
+                value="conditions"
+                leftSection={<IconStethoscope size={16} />}
+              >
+                {t('shared:categories.conditions')}
+              </Tabs.Tab>
+              <Tabs.Tab value="notes" leftSection={<IconNotes size={16} />}>
+                {t('shared:tabs.notes')}
+              </Tabs.Tab>
+              <Tabs.Tab
+                value="documents"
+                leftSection={<IconFileText size={16} />}
+              >
+                {editingMedication
+                  ? t('shared:tabs.documents')
+                  : t('shared:tabs.addFiles', 'Add Files')}
+              </Tabs.Tab>
+            </Tabs.List>
+
+            {/* Basic Info Tab */}
+            <Tabs.Panel value="basic">
+              <Box mt="md">
+                <Grid>
+                  {basicFields.map(field => (
+                    <Grid.Col
+                      span={{ base: 12, sm: field.gridColumn || 6 }}
+                      key={field.name}
+                    >
+                      {renderField(field)}
+                    </Grid.Col>
+                  ))}
+                </Grid>
+              </Box>
+            </Tabs.Panel>
+
+            {/* Details Tab */}
+            <Tabs.Panel value="details">
+              <Box mt="md">
+                <Grid>
+                  {detailsFields.map(field => (
+                    <Grid.Col
+                      span={{ base: 12, sm: field.gridColumn || 6 }}
+                      key={field.name}
+                    >
+                      {renderField(field)}
+                    </Grid.Col>
+                  ))}
+                </Grid>
+              </Box>
+            </Tabs.Panel>
+
+            {/* Conditions Tab */}
+            <Tabs.Panel value="conditions">
+              <Box mt="md">
+                {editingMedication ? (
+                  <MedicationRelationships
+                    direction="medication"
+                    medicationId={editingMedication.id}
+                    conditions={conditions}
+                    navigate={navigate}
+                    isViewMode={false}
+                  />
+                ) : (
+                  <MultiSelect
+                    label={t('common:buttons.linkConditions')}
+                    description={t(
+                      'medications.form.linkConditionsDescription'
+                    )}
+                    placeholder={t('common:modals.chooseConditionsToLink')}
+                    data={conditionOptions}
+                    value={formData.condition_ids || []}
+                    onChange={values => {
+                      onInputChange({
+                        target: { name: 'condition_ids', value: values },
+                      });
+                    }}
+                    searchable
+                    clearable
+                    comboboxProps={{ withinPortal: true, zIndex: 3000 }}
+                    nothingFoundMessage={t(
+                      'medications.form.noConditionsFound'
+                    )}
+                  />
+                )}
+              </Box>
+            </Tabs.Panel>
+
+            {/* Notes Tab */}
+            <Tabs.Panel value="notes">
+              <Box mt="md">
+                <Grid>
+                  {notesFields.map(field => (
+                    <Grid.Col
+                      span={{ base: 12, sm: field.gridColumn || 12 }}
+                      key={field.name}
+                    >
+                      {renderField(field)}
+                    </Grid.Col>
+                  ))}
+                </Grid>
+              </Box>
+            </Tabs.Panel>
+
+            {/* Documents Tab */}
+            <Tabs.Panel value="documents">
+              <Box mt="md">
+                <Stack gap="md">
+                  {editingMedication && (
+                    <Title order={4}>
+                      {t('shared:labels.attachedDocuments')}
+                    </Title>
+                  )}
+                  <DocumentManagerWithProgress
+                    entityType="medication"
+                    entityId={editingMedication?.id || null}
+                    mode={editingMedication ? 'edit' : 'create'}
+                    onUploadPendingFiles={handleDocumentManagerRef}
+                    showProgressModal={true}
+                    onUploadComplete={handleDocumentUploadComplete}
+                    onError={handleDocumentError}
+                  />
+                </Stack>
+              </Box>
+            </Tabs.Panel>
+          </Tabs>
+
+          {/* Custom children content */}
+          {children}
+
+          {/* Action Buttons */}
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isSubmitting || isLoading}
+            >
+              {t('shared:fields.cancel')}
+            </Button>
+            <Button type="submit" disabled={isSubmitting || isLoading}>
+              {editingMedication
+                ? t('medications.form.updateMedication')
+                : t('medications.form.addMedication')}
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
+  );
+};
+
+export default MantineMedicationForm;

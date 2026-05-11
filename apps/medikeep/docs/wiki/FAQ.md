@@ -1,0 +1,177 @@
+# Frequently Asked Questions
+
+Common questions about MediKeep.
+
+---
+
+## General
+
+### What is MediKeep?
+
+MediKeep is an open-source medical records management system that helps individuals and families organize their health information in one secure place.
+
+### Is MediKeep free?
+
+Yes, MediKeep is free and open source. You can self-host it on your own server or use Docker to run it locally.
+
+### Is my data secure?
+
+MediKeep stores all data in your own PostgreSQL database. Your data never leaves your server. The application uses:
+- JWT authentication
+- Password hashing (bcrypt)
+- HTTPS encryption (when configured)
+- Role-based access control
+
+### Can I use MediKeep for my family?
+
+Yes! MediKeep supports multiple patient profiles, so you can manage records for yourself, your spouse, children, parents, or anyone else you care for.
+
+---
+
+## Setup & Installation
+
+### What do I need to run MediKeep?
+
+**Minimum requirements:**
+- Docker and Docker Compose (recommended), OR
+- Python 3.12+ and Node.js 18+
+- PostgreSQL 15+
+- 2GB RAM, 2 CPU cores, 20GB disk space
+
+### How do I install MediKeep?
+
+The easiest way is with Docker:
+
+```bash
+# Clone the repository
+git clone https://github.com/afairgiant/MediKeep.git
+cd MediKeep
+
+# Copy and edit environment file (change passwords and SECRET_KEY)
+cp docker/.env.example .env
+
+# Start the application
+cd docker
+docker compose up -d
+```
+
+See the [Installation Guide](Installation-Guide) for detailed instructions.
+
+### How do I update MediKeep?
+
+```bash
+cd docker
+docker compose pull
+docker compose up -d
+```
+
+---
+
+## Features
+
+### Can I import data from other systems?
+
+Currently, MediKeep doesn't have automated import from other medical record systems. You can manually enter your data or upload documents.
+
+### Does MediKeep integrate with my doctor's office?
+
+MediKeep is designed for personal record keeping. It doesn't integrate directly with healthcare provider systems (EHRs). You can manually add information from your provider visits.
+
+### Can I export my data?
+
+Yes! You can:
+- Generate PDF reports for any patient
+- Export data via the API
+- Access the PostgreSQL database directly for backups
+
+### Does MediKeep support multiple languages?
+
+Yes. MediKeep supports 10 languages: English, French, German, Spanish, Italian, Portuguese, Russian, Swedish, Dutch, and Polish.
+
+---
+
+## Sharing & Access
+
+### How do I share records with someone?
+
+The recipient must already have an account on your MediKeep instance. To share:
+
+1. Go to the patient's page → **Sharing**
+2. Enter the recipient's username or email to look them up
+3. Choose a permission level and send the invitation
+4. The recipient will see the invitation in their account and can accept or decline
+
+### What permission levels are available?
+
+- **View** - Can see records but not modify
+- **Edit** - Can view and modify records
+- **Full** - Full access to the patient's records
+
+### How do I revoke someone's access?
+
+Go to the patient's sharing settings and remove their access.
+
+---
+
+## Troubleshooting
+
+### I forgot my password
+
+There is no self-service password reset. An administrator can reset your password through the admin panel.
+
+### I lost admin access / I'm locked out of the admin panel
+
+If your admin account was demoted, deleted, or you never had one on a fresh install, MediKeep ships with an emergency recovery script that runs against the database directly.
+
+**One-liner recovery for the default `admin` account:**
+
+```bash
+docker exec -it <container_name> python app/scripts/create_emergency_admin.py --username admin
+```
+
+The script detects whether the user exists and either **promotes the existing user to admin** (preserving their current password — no reset) or **creates a new admin user** if no account with that username exists. It asks for confirmation before making any changes and writes both a security-log entry and an activity-log row for audit purposes.
+
+Full documentation including all flags, scenarios (lost default admin, non-default username, creating an additional admin), exit codes, and troubleshooting is in [`app/scripts/README_EMERGENCY_ADMIN.md`](../../app/scripts/README_EMERGENCY_ADMIN.md).
+
+MediKeep also runs a startup self-check that logs a prominent `WARNING` with the recovery command whenever it detects zero admin users in a non-empty database, so if you missed the lockout, you'll see it in `logs/security.log` on the next restart.
+
+### The application is slow
+
+Try:
+1. Check your server resources (CPU, RAM)
+2. Ensure PostgreSQL has adequate memory
+3. Check for large numbers of records that may need pagination
+
+### I can't upload files
+
+Check:
+1. File size limit (default 15MB)
+2. Allowed file types (images, PDFs)
+3. Storage permissions on the server
+
+### I'm getting CORS errors
+
+CORS is configured to allow all origins. If you're seeing CORS errors in development, make sure the backend is actually running on port 8000.
+
+---
+
+## Development
+
+### How can I contribute?
+
+See the [Contributing Guide](Contributing-Guide) for code standards and workflow.
+
+### Where do I report bugs?
+
+Open an issue on [GitHub Issues](https://github.com/afairgiant/MediKeep/issues).
+
+### Is there an API?
+
+Yes! MediKeep has a comprehensive REST API. See the [API Reference](API-Reference) for documentation.
+
+---
+
+## Still have questions?
+
+- [GitHub Discussions](https://github.com/afairgiant/MediKeep/discussions) - Ask the community
+- [GitHub Issues](https://github.com/afairgiant/MediKeep/issues) - Report problems

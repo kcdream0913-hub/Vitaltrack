@@ -1,0 +1,143 @@
+# Wiki Mapping Configuration
+# Maps documentation files to GitHub wiki pages
+#
+# Format:
+#   source: path to source file (relative to repo root)
+#   wiki_page: name of wiki page (will become Page-Name.md in wiki)
+#   title: optional title override for the wiki page
+
+pages:
+  # ===== General Pages =====
+  - source: docs/wiki/Home.md
+    wiki_page: Home
+    title: MediKeep Wiki
+
+  - source: docs/wiki/User-Guide.md
+    wiki_page: User-Guide
+    title: User Guide
+
+  - source: docs/wiki/Admin-Guide.md
+    wiki_page: Admin-Guide
+    title: Admin Guide
+
+  - source: docs/wiki/FAQ.md
+    wiki_page: FAQ
+    title: Frequently Asked Questions
+
+  - source: docs/wiki/Installation-Guide.md
+    wiki_page: Installation-Guide
+    title: Installation Guide
+
+  # ===== Developer Guide =====
+  - source: docs/developer-guide/README.md
+    wiki_page: Developer-Guide
+    title: Developer Guide
+
+  - source: docs/developer-guide/DOCUMENTATION_INDEX.md
+    wiki_page: Documentation-Index
+    title: Documentation Index
+
+  - source: docs/developer-guide/00-quickstart.md
+    wiki_page: Quick-Start-Guide
+    title: Quick Start Guide
+
+  - source: docs/developer-guide/01-architecture.md
+    wiki_page: Architecture
+    title: Architecture Overview
+
+  - source: docs/developer-guide/02-api-reference.md
+    wiki_page: API-Reference
+    title: API Reference
+
+  - source: docs/developer-guide/03-database-schema.md
+    wiki_page: Database-Schema
+    title: Database Schema
+
+  - source: docs/developer-guide/04-deployment.md
+    wiki_page: Deployment-Guide
+    title: Deployment Guide
+
+  - source: docs/developer-guide/05-contributing.md
+    wiki_page: Contributing-Guide
+    title: Contributing Guide
+
+  # ===== Feature Documentation =====
+  - source: docs/SSO_QUICK_START.md
+    wiki_page: SSO-Quick-Start
+    title: SSO Quick Start
+
+  - source: docs/SSO_SETUP_GUIDE.md
+    wiki_page: SSO-Setup-Guide
+    title: SSO Setup Guide
+
+  - source: docs/wiki/Paperless-Integration.md
+    wiki_page: Paperless-Integration
+    title: Paperless-ngx Integration
+
+  - source: docs/wiki/Lab-Result-Parsing.md
+    wiki_page: Lab-Result-Parsing
+    title: Lab Result PDF Parsing
+
+# Link transformations
+# Maps internal doc links to wiki page links
+link_mappings:
+  # Developer guide internal links
+  "00-quickstart.md": "Quick-Start-Guide"
+  "01-architecture.md": "Architecture"
+  "02-api-reference.md": "API-Reference"
+  "03-database-schema.md": "Database-Schema"
+  "04-deployment.md": "Deployment-Guide"
+  "05-contributing.md": "Contributing-Guide"
+  "README.md": "Developer-Guide"
+  "DOCUMENTATION_INDEX.md": "Documentation-Index"
+
+  # Feature docs
+  "../SSO_QUICK_START.md": "SSO-Quick-Start"
+  "../SSO_SETUP_GUIDE.md": "SSO-Setup-Guide"
+  "SSO_QUICK_START.md": "SSO-Quick-Start"
+  "SSO_SETUP_GUIDE.md": "SSO-Setup-Guide"
+
+  # Wiki pages
+  "User-Guide": "User-Guide"
+  "Admin-Guide": "Admin-Guide"
+  "FAQ": "FAQ"
+  "Installation-Guide": "Installation-Guide"
+  "Paperless-Integration": "Paperless-Integration"
+  "Lab-Result-Parsing": "Lab-Result-Parsing"
+
+# Sidebar configuration
+# Defines the wiki sidebar structure
+sidebar:
+  - section: Welcome
+    pages:
+      - Home
+
+  - section: Users
+    pages:
+      - User-Guide
+      - Installation-Guide
+      - FAQ
+
+  - section: Administrators
+    pages:
+      - Admin-Guide
+
+  - section: Developers
+    pages:
+      - Developer-Guide
+      - Quick-Start-Guide
+      - Architecture
+      - API-Reference
+      - Database-Schema
+      - Contributing-Guide
+
+  - section: Operations
+    pages:
+      - Deployment-Guide
+      - SSO-Quick-Start
+      - SSO-Setup-Guide
+
+  - section: Features
+    pages:
+      - Paperless-Integration
+      - Lab-Result-Parsing

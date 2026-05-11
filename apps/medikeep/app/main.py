@@ -1,0 +1,80 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.v1.api import api_router
+from app.core.config import settings
+from app.core.http.error_handling import setup_error_handling
+from app.core.http.middleware import TrailingSlashMiddleware
+from app.core.http.static_files import setup_static_files
+from app.core.logging.activity_middleware import ActivityTrackingMiddleware
+from app.core.logging.config import LoggingConfig, get_logger
+from app.core.logging.middleware import RequestLoggingMiddleware
+from app.core.logging.request_id_middleware import RequestIDMiddleware
+from app.core.logging.uvicorn_logging import configure_uvicorn_logging
+from app.core.startup import startup_event
+
+# Initialize logging configuration
+logging_config = LoggingConfig()
+
+# Configure Uvicorn logging to match our format
+configure_uvicorn_logging()
+
+# Initialize logger
+logger = get_logger(__name__, "app")
+
+# Create FastAPI app
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.VERSION,
+    openapi_url="/api/v1/openapi.json" if settings.ENABLE_API_DOCS else None,
+)
+
+# Add middleware stack (execution order is reverse of registration)
+# RequestIDMiddleware first - adds unique ID to all requests for tracing
+app.add_middleware(RequestIDMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(ActivityTrackingMiddleware)
+app.add_middleware(TrailingSlashMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"],
+    expose_headers=["X-Request-ID", "Content-Disposition"],
+)
+
+# Setup comprehensive error handling system
+setup_error_handling(app)
+
+# Include API routers
+app.include_router(api_router, prefix="/api/v1")
+
+# Setup static files and get directory paths
+static_dir, html_dir = setup_static_files(app)
+
+# Setup startup event
+app.add_event_handler("startup", startup_event)
+
+
+async def shutdown_event():
+    """Clean up resources on shutdown."""
+    try:
+        from app.services.backup_scheduler_service import BackupSchedulerService
+
+        scheduler = BackupSchedulerService.get_instance()
+        await scheduler.shutdown()
+    except Exception as e:
+        logger.warning(f"Error shutting down backup scheduler: {e}")
+
+
+app.add_event_handler("shutdown", shutdown_event)
+
+
+@app.get("/health")
+def health():
+    """Health check endpoint"""
+    logger.debug(
+        "Health check requested", extra={"category": "app", "event": "health_check"}
+    )
+    return {"status": "ok", "app": settings.APP_NAME, "version": settings.VERSION}
