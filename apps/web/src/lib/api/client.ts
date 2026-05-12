@@ -216,7 +216,8 @@ export interface ImmunizationCreate {
 export interface ImmunizationResponse extends ImmunizationCreate { id: string; created_at: string }
 
 export interface LabTestComponentCreate {
-  test_name: string; result_type?: string
+  test_name: string; abbreviation?: string; test_code?: string; canonical_test_name?: string
+  result_type?: string
   value?: number; unit?: string; qualitative_value?: string
   ref_range_min?: number; ref_range_max?: number; ref_range_text?: string
   status?: string; category?: string; display_order?: number; notes?: string
@@ -302,6 +303,53 @@ export const symptomsApi = {
   logOccurrence: (id: string, b: SymptomOccurrenceCreate) =>
     apiFetch(`/api/v1/symptoms/${id}/occurrences`, { method: 'POST', body: JSON.stringify(b) }),
   delete:      (id: string) => apiFetch<void>(`/api/v1/symptoms/${id}`, { method: 'DELETE' }),
+}
+
+// ─── Appointments ─────────────────────────────────────────────────────────────
+
+export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled' | 'no_show'
+
+export interface AppointmentCreate {
+  title:             string
+  provider_name?:    string
+  specialty?:        string
+  location?:         string
+  appointment_date:  string   // ISO 8601 datetime
+  duration_minutes?: number
+  status?:           AppointmentStatus
+  notes?:            string
+}
+
+export interface AppointmentResponse extends Required<Pick<AppointmentCreate, 'title'>> {
+  id:               string
+  provider_name?:   string
+  specialty?:       string
+  location?:        string
+  appointment_date: string
+  duration_minutes: number
+  status:           AppointmentStatus
+  notes?:           string
+  reminder_sent:    boolean
+  created_at:       string
+}
+
+export const appointmentsApi = {
+  create:   (body: AppointmentCreate) =>
+    apiFetch<AppointmentResponse>('/api/v1/appointments', { method: 'POST', body: JSON.stringify(body) }),
+
+  list:     (params?: { status?: AppointmentStatus; upcoming_only?: boolean }) => {
+    const q = params ? buildQuery(params as Record<string, unknown>) : ''
+    return apiFetch<AppointmentResponse[]>(`/api/v1/appointments${q}`)
+  },
+
+  upcoming: () => apiFetch<AppointmentResponse[]>('/api/v1/appointments/upcoming'),
+
+  get:      (id: string) => apiFetch<AppointmentResponse>(`/api/v1/appointments/${id}`),
+
+  update:   (id: string, body: Partial<AppointmentCreate>) =>
+    apiFetch<AppointmentResponse>(`/api/v1/appointments/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+
+  delete:   (id: string) => apiFetch<void>(`/api/v1/appointments/${id}`, { method: 'DELETE' }),
 }
 
 export { ApiError }

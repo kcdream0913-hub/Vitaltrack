@@ -129,12 +129,13 @@ def create_app() -> FastAPI:
 
     # Register routers
     API_PREFIX = "/api/v1"
-    from app.api.v1.routers import vitals, medications, analytics, clinical
-    app.include_router(vitals.router,      prefix=f"{API_PREFIX}/vitals",       tags=["Vitals"])
-    app.include_router(medications.router, prefix=f"{API_PREFIX}/medications",  tags=["Medications"])
-    app.include_router(analytics.router,   prefix=f"{API_PREFIX}/analytics",    tags=["Analytics"])
+    from app.api.v1.routers import vitals, medications, analytics, clinical, appointments
+    app.include_router(vitals.router,        prefix=f"{API_PREFIX}/vitals",        tags=["Vitals"])
+    app.include_router(medications.router,   prefix=f"{API_PREFIX}/medications",   tags=["Medications"])
+    app.include_router(analytics.router,     prefix=f"{API_PREFIX}/analytics",     tags=["Analytics"])
     # MediKeep clinical domains — one router, resource-prefixed paths
-    app.include_router(clinical.router,    prefix=f"{API_PREFIX}",              tags=["Clinical"])
+    app.include_router(clinical.router,      prefix=f"{API_PREFIX}",               tags=["Clinical"])
+    app.include_router(appointments.router,  prefix=f"{API_PREFIX}/appointments",  tags=["Appointments"])
 
     @app.get("/health", include_in_schema=False)
     async def health_check():

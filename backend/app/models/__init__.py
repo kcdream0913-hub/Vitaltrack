@@ -11,6 +11,7 @@ from app.models.clinical import (
     Symptom,
     SymptomOccurrence,
 )
+from app.models.appointment import Appointment
 
 __all__ = [
     "UserProfile",
@@ -26,4 +27,5 @@ __all__ = [
     "LabTestComponent",
     "Symptom",
     "SymptomOccurrence",
+    "Appointment",
 ]

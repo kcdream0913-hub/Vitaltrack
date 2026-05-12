@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  web:
+    name: Web — Lint, Typecheck, Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @vitaltrack/web lint
+      - run: pnpm --filter @vitaltrack/web typecheck
+      # Tests will run here once Vitest is set up in Sprint 4
+      # - run: pnpm --filter @vitaltrack/web test --run
+
+  backend:
+    name: Backend — Lint, Type, Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: pip install ruff mypy pytest pytest-asyncio httpx
+      - run: ruff check app/
+      - run: mypy app/ --ignore-missing-imports --no-strict-optional
+      # Tests will run once pytest fixtures are set up in Sprint 4
+      # - run: pytest tests/ -x -q

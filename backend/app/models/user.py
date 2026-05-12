@@ -35,5 +35,6 @@ class UserProfile(Base):
     )
 
     # Relationships
-    vitals:      Mapped[list["Vital"]]      = relationship(back_populates="user", lazy="noload")
-    medications: Mapped[list["Medication"]] = relationship(back_populates="user", lazy="noload")
+    vitals:        Mapped[list["Vital"]]        = relationship(back_populates="user", lazy="noload")
+    medications:   Mapped[list["Medication"]]   = relationship(back_populates="user", lazy="noload")
+    appointments:  Mapped[list["Appointment"]]  = relationship(back_populates="user", lazy="noload")

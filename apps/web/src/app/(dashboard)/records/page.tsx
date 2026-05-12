@@ -274,7 +274,7 @@ function SymptomsTab() {
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-gray-900">{s.symptom_name}</span>
             {s.is_chronic && <Badge label="chronic" colorMap={STATUS_COLOR} />}
-            <Badge label={s.status} colorMap={STATUS_COLOR} />
+            {s.status && <Badge label={s.status} colorMap={STATUS_COLOR} />}
             {s.category && <span className="text-sm text-gray-400">{s.category}</span>}
           </div>
           <div className="text-sm text-gray-500 flex gap-4 flex-wrap mt-1">

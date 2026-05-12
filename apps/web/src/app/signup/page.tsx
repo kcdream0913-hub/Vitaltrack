@@ -5,21 +5,30 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router   = useRouter()
   const supabase = createClient()
 
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
+  const [name,     setName]     = useState('')
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState<string | null>(null)
+  const [success,  setSuccess]  = useState(false)
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data:        { full_name: name },
+        emailRedirectTo: `${location.origin}/auth/callback?next=/`,
+      },
+    })
 
     if (error) {
       setError(error.message)
@@ -27,15 +36,42 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/')
-    router.refresh()
+    setSuccess(true)
+    setLoading(false)
   }
 
-  async function handleGoogleLogin() {
+  async function handleGoogleSignup() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options:  { redirectTo: `${location.origin}/auth/callback?next=/` },
     })
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white p-8">
+        <div className="w-full max-w-sm text-center">
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+            style={{ backgroundColor: 'rgba(30,111,217,0.1)' }}
+          >
+            <span className="text-3xl">✉️</span>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">Check your email</h2>
+          <p className="mt-2 text-sm text-gray-500">
+            We&apos;ve sent a confirmation link to <strong className="text-gray-700">{email}</strong>.
+            Click it to activate your account.
+          </p>
+          <Link
+            href="/login"
+            className="mt-6 inline-block text-sm font-semibold hover:underline"
+            style={{ color: '#1E6FD9' }}
+          >
+            ← Back to sign in
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -56,19 +92,19 @@ export default function LoginPage() {
         {/* Hero copy */}
         <div className="mt-12">
           <h1 className="text-4xl font-bold text-white leading-tight">
-            Your health,<br />clearly tracked.
+            Start your<br />health journey.
           </h1>
           <p className="mt-4 text-lg leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>
-            Monitor vitals, medications, and appointments — all in one HIPAA-compliant place.
+            Join thousands of users who trust VitalTrack to manage their health data securely.
           </p>
         </div>
 
         {/* Feature list */}
         <div className="space-y-3 mt-auto pt-12">
           {[
+            { icon: '🆓', text: 'Free forever — no credit card needed' },
             { icon: '📊', text: 'Real-time vital sign tracking' },
             { icon: '💊', text: 'Smart medication reminders' },
-            { icon: '📈', text: 'AI-powered health insights' },
             { icon: '🔒', text: 'End-to-end encrypted & HIPAA compliant' },
           ].map(f => (
             <div key={f.text} className="flex items-center gap-3" style={{ color: 'rgba(255,255,255,0.85)' }}>
@@ -78,13 +114,12 @@ export default function LoginPage() {
           ))}
         </div>
 
-        {/* Footer note */}
         <p className="mt-8 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
           Trusted by patients and clinicians worldwide.
         </p>
       </div>
 
-      {/* ── Right: Login form ─────────────────────────────────────────────── */}
+      {/* ── Right: Signup form ────────────────────────────────────────────── */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-sm">
 
@@ -99,12 +134,12 @@ export default function LoginPage() {
             <span className="font-bold text-gray-900">VitalTrack</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900">Welcome back</h2>
-          <p className="text-sm text-gray-500 mt-1">Sign in to your health dashboard</p>
+          <h2 className="text-2xl font-bold text-gray-900">Create your account</h2>
+          <p className="text-sm text-gray-500 mt-1">Free forever — no credit card required</p>
 
           {/* Google SSO */}
           <button
-            onClick={handleGoogleLogin}
+            onClick={handleGoogleSignup}
             type="button"
             className="mt-6 w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors min-h-[44px]"
           >
@@ -114,7 +149,7 @@ export default function LoginPage() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Continue with Google
+            Sign up with Google
           </button>
 
           {/* Divider */}
@@ -124,8 +159,25 @@ export default function LoginPage() {
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
-          {/* Email / Password */}
-          <form onSubmit={handleLogin} className="space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSignup} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                Full name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                required
+                placeholder="Jane Smith"
+                autoComplete="name"
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none transition-colors min-h-[44px]"
+                onFocus={e => { e.currentTarget.style.borderColor = '#1E6FD9'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(30,111,217,0.15)' }}
+                onBlur={e  => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.boxShadow = 'none' }}
+              />
+            </div>
+
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">
                 Email address
@@ -138,30 +190,23 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 autoComplete="email"
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none transition-colors min-h-[44px]"
-                style={{ '--tw-ring-color': '#1E6FD9' } as React.CSSProperties}
                 onFocus={e => { e.currentTarget.style.borderColor = '#1E6FD9'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(30,111,217,0.15)' }}
                 onBlur={e  => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.boxShadow = 'none' }}
               />
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium text-gray-700">Password</label>
-                <Link
-                  href="/forgot-password"
-                  className="text-xs font-medium hover:underline"
-                  style={{ color: '#1E6FD9' }}
-                >
-                  Forgot password?
-                </Link>
-              </div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                Password
+              </label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                placeholder="••••••••"
-                autoComplete="current-password"
+                minLength={8}
+                placeholder="At least 8 characters"
+                autoComplete="new-password"
                 className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none transition-colors min-h-[44px]"
                 onFocus={e => { e.currentTarget.style.borderColor = '#1E6FD9'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(30,111,217,0.15)' }}
                 onBlur={e  => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.boxShadow = 'none' }}
@@ -189,21 +234,24 @@ export default function LoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                   </svg>
-                  Signing in…
+                  Creating account…
                 </span>
-              ) : 'Sign in'}
+              ) : 'Create account'}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-xs text-gray-500">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="font-semibold hover:underline" style={{ color: '#1E6FD9' }}>
-              Sign up free
-            </Link>
+          <p className="mt-4 text-center text-xs text-gray-400">
+            By signing up you agree to our{' '}
+            <span className="underline cursor-default">Terms</span>
+            {' & '}
+            <span className="underline cursor-default">Privacy Policy</span>
           </p>
 
-          <p className="mt-8 text-center text-xs text-gray-400">
-            Protected by Supabase Auth · HIPAA compliant
+          <p className="mt-5 text-center text-xs text-gray-500">
+            Already have an account?{' '}
+            <Link href="/login" className="font-semibold hover:underline" style={{ color: '#1E6FD9' }}>
+              Sign in
+            </Link>
           </p>
         </div>
       </div>
